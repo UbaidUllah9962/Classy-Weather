@@ -15,7 +15,7 @@ body {
   font-size: 2rem;
   height: 100vh;
   color: #222;
-  background-color: #eabfb9;
+  background-color: #dde5b6;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -31,6 +31,7 @@ body {
   border: 2px solid #222;
   outline: 2px solid #222;
   outline-offset: 1.2rem;
+  background-color: #adc178;
 }
 
 h1 {
@@ -49,7 +50,7 @@ input {
   font-family: inherit;
   color: inherit;
   font-size: 2rem;
-  background-color: #f0d2ce;
+  background-color: #f0ead2;
   padding: 1.6rem 3.2rem;
   border: none;
   width: 32rem;
@@ -66,7 +67,7 @@ input:focus {
 }
 
 .day {
-  background-color: #f0d2ce;
+  background-color: #eae2b7;
   padding: 1.6rem 0 2rem;
   width: 12.8rem;
 
