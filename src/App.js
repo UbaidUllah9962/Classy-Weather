@@ -35,10 +35,16 @@ const App = () => {
       setDisplayLocation(`${name} ${Utilities.convertToFlag(country_code)}`);
 
       // 2) Getting actual weather
+      // Fall back to "auto" when the geocoding API doesn't return a timezone
+      const tz = timezone || "auto";
       const weatherRes = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&timezone=${timezone}&daily=weathercode,temperature_2m_max,temperature_2m_min`
+        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&timezone=${tz}&daily=weathercode,temperature_2m_max,temperature_2m_min`
       );
+      if (!weatherRes.ok)
+        throw new Error(`Weather API error: ${weatherRes.status}`);
       const weatherData = await weatherRes.json();
+      if (!weatherData.daily)
+        throw new Error("Unexpected response from weather service");
       setWeather(weatherData.daily);
     } catch (err) {
       console.error(err);
