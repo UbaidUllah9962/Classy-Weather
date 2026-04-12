@@ -48,30 +48,58 @@ class App extends React.Component {
     try {
       this.setState({ isLoading: true });
 
-      // 1) Getting location (geocoding)
-      const geoRes = await fetch(
-        `https://geocoding-api.open-meteo.com/v1/search?name=${this.state.location}`
-      );
-      const geoData = await geoRes.json();
-      console.log(geoData);
+      let latitude, longitude, timezone, locationName, countryCode;
+      const trimmed = this.state.location.trim();
+      const isPostalCode = /^\d{4,10}$/.test(trimmed);
 
-      if (!geoData.results) throw new Error("Location not found");
+      if (isPostalCode) {
+        // Use Nominatim for postal code lookups
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?postalcode=${encodeURIComponent(trimmed)}&format=json&limit=1`,
+          { headers: { "Accept-Language": "en" } }
+        );
+        const geoData = await geoRes.json();
 
-      const { latitude, longitude, timezone, name, country_code } =
-        geoData.results.at(0);
+        if (!geoData.length) throw new Error("Location not found for this postal code");
+
+        const result = geoData[0];
+        latitude = parseFloat(result.lat);
+        longitude = parseFloat(result.lon);
+        timezone = null;
+        locationName = result.display_name.split(",")[0].trim();
+        countryCode = null;
+      } else {
+        // Use Open-Meteo geocoding for city/country name lookups
+        const geoRes = await fetch(
+          `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(trimmed)}`
+        );
+        const geoData = await geoRes.json();
+
+        if (!geoData.results) throw new Error("Location not found");
+
+        const result = geoData.results.at(0);
+        latitude = result.latitude;
+        longitude = result.longitude;
+        timezone = result.timezone;
+        locationName = result.name;
+        countryCode = result.country_code;
+      }
 
       this.setState({
-        displayLocation: `${name} ${convertToFlag(country_code)}`,
+        displayLocation: countryCode
+          ? `${locationName} ${convertToFlag(countryCode)}`
+          : locationName,
       });
 
-      // 2) Getting actual weather
+      // Getting actual weather
+      const tz = timezone || "auto";
       const weatherRes = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&timezone=${timezone}&daily=weathercode,temperature_2m_max,temperature_2m_min`
+        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&timezone=${tz}&daily=weathercode,temperature_2m_max,temperature_2m_min`
       );
       const weatherData = await weatherRes.json();
       this.setState({ weather: weatherData.daily });
     } catch (err) {
-      console.err(err);
+      console.error(err);
     } finally {
       this.setState({ isLoading: false });
     }
@@ -84,7 +112,7 @@ class App extends React.Component {
         <div>
           <input
             type="text"
-            placeholder="Search from location..."
+            placeholder="Search by city, country, or pin code..."
             value={this.state.location}
             onChange={(e) => this.setState({ location: e.target.value })}
           />

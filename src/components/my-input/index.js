@@ -3,7 +3,7 @@ const MyInput = (props) => {
     <div>
       <input
         type="text"
-        placeholder="Search from location..."
+        placeholder="Search by city, country, or pin code..."
         value={props.location}
         onChange={props.onChangeLocation}
       />

@@ -11,7 +11,7 @@ const App = () => {
   const [error, setError] = useState("");
 
   const fetchWeather = useCallback(async () => {
-    if (location.length < 3) {
+    if (location.length < 2) {
       setWeather({});
       setError("");
       return;
@@ -21,18 +21,49 @@ const App = () => {
       setIsLoading(true);
       setError("");
 
-      // 1) Getting location (geocoding)
-      const geoRes = await fetch(
-        `https://geocoding-api.open-meteo.com/v1/search?name=${location}`
+      let latitude, longitude, timezone, locationName, countryCode;
+      const trimmed = location.trim();
+      const isPostalCode = /^\d{4,10}$/.test(trimmed);
+
+      if (isPostalCode) {
+        // Use Nominatim for postal code lookups
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?postalcode=${encodeURIComponent(trimmed)}&format=json&limit=1`,
+          { headers: { "Accept-Language": "en" } }
+        );
+        const geoData = await geoRes.json();
+
+        if (!geoData.length) throw new Error("Location not found for this postal code");
+
+        const result = geoData[0];
+        latitude = parseFloat(result.lat);
+        longitude = parseFloat(result.lon);
+        timezone = null;
+        // Extract a short name from the display_name
+        locationName = result.display_name.split(",")[0].trim();
+        countryCode = null;
+      } else {
+        // Use Open-Meteo geocoding for city/country name lookups
+        const geoRes = await fetch(
+          `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(trimmed)}`
+        );
+        const geoData = await geoRes.json();
+
+        if (!geoData.results) throw new Error("Location not found");
+
+        const result = geoData.results.at(0);
+        latitude = result.latitude;
+        longitude = result.longitude;
+        timezone = result.timezone;
+        locationName = result.name;
+        countryCode = result.country_code;
+      }
+
+      setDisplayLocation(
+        countryCode
+          ? `${locationName} ${Utilities.convertToFlag(countryCode)}`
+          : locationName
       );
-      const geoData = await geoRes.json();
-
-      if (!geoData.results) throw new Error("Location not found");
-
-      const { latitude, longitude, timezone, name, country_code } =
-        geoData.results.at(0);
-
-      setDisplayLocation(`${name} ${Utilities.convertToFlag(country_code)}`);
 
       // 2) Getting actual weather
       // Fall back to "auto" when the geocoding API doesn't return a timezone
