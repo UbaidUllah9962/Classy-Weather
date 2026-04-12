@@ -4,7 +4,7 @@ const Day = (props) => {
   const { date, max, min, code, isToday } = props;
 
   return (
-    <li className="day">
+    <li className={`day${isToday ? " important" : ""}`}>
       <span>{Utilities.getWeatherIcon(code)}</span>
       <p>{isToday ? "Today" : Utilities.formatDay(date)}</p>
       <p>

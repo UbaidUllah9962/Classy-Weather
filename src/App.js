@@ -8,19 +8,24 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [displayLocation, setDisplayLocation] = useState("");
   const [weather, setWeather] = useState({});
+  const [error, setError] = useState("");
 
   const fetchWeather = async () => {
-    if (location.length < 3) return setWeather({});
+    if (location.length < 3) {
+      setWeather({});
+      setError("");
+      return;
+    }
 
     try {
       setIsLoading(true);
+      setError("");
 
       // 1) Getting location (geocoding)
       const geoRes = await fetch(
         `https://geocoding-api.open-meteo.com/v1/search?name=${location}`
       );
       const geoData = await geoRes.json();
-      console.log(geoData);
 
       if (!geoData.results) throw new Error("Location not found");
 
@@ -37,6 +42,8 @@ const App = () => {
       setWeather(weatherData.daily);
     } catch (err) {
       console.error(err);
+      setWeather({});
+      setError(err.message || "Something went wrong fetching weather.");
     } finally {
       setIsLoading(false);
     }
@@ -49,6 +56,7 @@ const App = () => {
   useEffect(() => {
     fetchWeather();
     if (location !== "") localStorage.setItem("location", location);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
 
   return (
@@ -60,6 +68,8 @@ const App = () => {
       />
 
       {isLoading && <p className="loader">Loading...</p>}
+
+      {error && <p className="error">{error}</p>}
 
       {weather.weathercode && (
         <Weather weather={weather} location={displayLocation} />
