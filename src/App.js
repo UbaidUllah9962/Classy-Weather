@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Utilities from "./utilities";
 import MyInput from "./components/my-input";
 import Weather from "./components/weather";
@@ -10,7 +10,7 @@ const App = () => {
   const [weather, setWeather] = useState({});
   const [error, setError] = useState("");
 
-  const fetchWeather = async () => {
+  const fetchWeather = useCallback(async () => {
     if (location.length < 3) {
       setWeather({});
       setError("");
@@ -47,7 +47,7 @@ const App = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [location]);
 
   useEffect(() => {
     setLocation(localStorage.getItem("location") || "");
@@ -56,8 +56,7 @@ const App = () => {
   useEffect(() => {
     fetchWeather();
     if (location !== "") localStorage.setItem("location", location);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location]);
+  }, [location, fetchWeather]);
 
   return (
     <div className="app">
